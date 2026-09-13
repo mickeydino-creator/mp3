@@ -7,16 +7,23 @@ import type { VideoMeta } from "./jobs.js";
 const YTDLP_BIN = process.env.YTDLP_PATH || "yt-dlp";
 const FFMPEG_BIN = process.env.FFMPEG_PATH || "ffmpeg";
 
-const INFO_TIMEOUT_MS = 45_000;
+const INFO_TIMEOUT_MS = 60_000;
 const CONVERT_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes hard ceiling per job
 const MAX_DURATION_SECONDS = 3 * 60 * 60; // reject anything over 3 hours
 
 // YouTube's default "web" player client frequently returns a bare "Video
-// unavailable" for requests coming from cloud/datacenter IPs (Render, AWS,
-// etc.), even for perfectly public videos. Falling back through the
-// android/ios clients (which don't need this extra signature check) works
-// around it in most cases.
-const CLIENT_FALLBACK_ARGS = ["--extractor-args", "youtube:player_client=android,ios,web"];
+// unavailable" (or fails to serve any real, non-metadata-only format) for
+// requests coming from cloud/datacenter IPs (Render, AWS, etc.), even for
+// perfectly public videos. tv_embedded and mweb are included alongside
+// android/ios because they sometimes succeed where the others are blocked
+// on a given IP range — there's no single client that reliably works
+// against every datacenter IP, so this list is a best-effort chain, not a
+// guaranteed fix. If none of these work, the only reliable option left is
+// an authenticated session (see YTDLP_COOKIES_FILE below).
+const CLIENT_FALLBACK_ARGS = [
+  "--extractor-args",
+  "youtube:player_client=android,ios,tv_embedded,mweb,web",
+];
 
 // Optional path to a Netscape-format cookies.txt exported from a real,
 // logged-in browser session. Cloud/datacenter IPs are increasingly required
