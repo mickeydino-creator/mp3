@@ -10,6 +10,11 @@ const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 const ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
 
+// Render (and most PaaS hosts) put the app behind a reverse proxy that sets
+// X-Forwarded-For; trust exactly one hop so express-rate-limit reads the
+// real client IP instead of rejecting the header as spoofed.
+app.set("trust proxy", 1);
+
 app.use(helmet());
 app.use(cors({ origin: ORIGIN }));
 app.use(express.json({ limit: "16kb" }));

@@ -78,6 +78,7 @@ export async function fetchVideoInfo(videoId: string): Promise<VideoMeta> {
     stdout = result.stdout;
   } catch (err) {
     if (err instanceof YtDlpError && err.code === "TIMEOUT") throw err;
+    console.error("yt-dlp info lookup failed:", err instanceof Error ? err.message : err);
     throw new YtDlpError(
       "UNAVAILABLE",
       "This video is unavailable, private, age-restricted, or otherwise not accessible.",
