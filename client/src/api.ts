@@ -1,3 +1,9 @@
+// When the frontend is deployed separately from the API (e.g. a Render
+// static site talking to a Render web service on another domain), set
+// VITE_API_BASE_URL at build time. Left empty, requests stay same-origin
+// (used by the Vite dev proxy and same-origin deployments).
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "";
+
 export interface VideoMeta {
   id: string;
   title: string;
@@ -46,7 +52,7 @@ async function parseJsonOrThrow<T>(res: Response): Promise<T> {
 }
 
 export async function fetchVideoInfo(url: string): Promise<VideoMeta> {
-  const res = await fetch("/api/info", {
+  const res = await fetch(`${API_BASE}/api/info`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url }),
@@ -61,7 +67,7 @@ export async function startConversion(params: {
   audioQuality?: string;
   videoQuality?: string;
 }): Promise<string> {
-  const res = await fetch("/api/convert", {
+  const res = await fetch(`${API_BASE}/api/convert`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
@@ -71,10 +77,10 @@ export async function startConversion(params: {
 }
 
 export async function fetchJobStatus(jobId: string): Promise<JobStatusResponse> {
-  const res = await fetch(`/api/convert/${jobId}`);
+  const res = await fetch(`${API_BASE}/api/convert/${jobId}`);
   return parseJsonOrThrow<JobStatusResponse>(res);
 }
 
 export function downloadUrl(jobId: string): string {
-  return `/api/convert/${jobId}/download`;
+  return `${API_BASE}/api/convert/${jobId}/download`;
 }

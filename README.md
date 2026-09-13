@@ -97,6 +97,47 @@ behind a reverse proxy (nginx, Caddy) that forwards `/api/*` to the Node
 process on `PORT`. Ensure `yt-dlp` and `ffmpeg` are installed on whatever
 host runs `server/`.
 
+## Deploying to Render
+
+The repo includes a [`render.yaml`](render.yaml) Blueprint that stands up two
+services:
+
+- **`convertly-api`** — a Docker web service (`server/Dockerfile`) with
+  Node, `ffmpeg`, and `yt-dlp` preinstalled. Render's own container disk is
+  used for temporary conversion files; nothing needs to be provisioned.
+- **`convertly-client`** — a static site built from `client/`, with a
+  catch-all rewrite to `index.html` so client-side routing (`/about`,
+  `/terms`, `/privacy`) works on refresh/direct links.
+
+### Steps
+
+1. Push this repo to GitHub (already done if you're reading this from the repo).
+2. In the Render dashboard: **New +** → **Blueprint**, pick this repo/branch.
+   Render reads `render.yaml` and proposes both services — click **Apply**.
+3. Wait for both to finish deploying. Note the two URLs Render assigns
+   (normally `https://convertly-api.onrender.com` and
+   `https://convertly-client.onrender.com`, which is what `render.yaml`
+   already wires together via `CLIENT_ORIGIN` and `VITE_API_BASE_URL`).
+4. **If Render had to rename either service** (the name was taken), the two
+   env vars above will point at the wrong URL. Fix it in each service's
+   **Environment** tab:
+   - On `convertly-api`: set `CLIENT_ORIGIN` to the actual client URL.
+   - On `convertly-client`: set `VITE_API_BASE_URL` to the actual API URL,
+     then trigger **Manual Deploy** (it's a build-time variable, so it only
+     takes effect on a rebuild).
+5. Open the client URL — the converter should work end-to-end.
+
+Notes:
+- The API's plan in `render.yaml` is `starter` (Render's free tier spins down
+  on idle and cold-starts slowly, which hurts conversion UX — `starter` or
+  higher is recommended for anything beyond a quick test).
+- Render's `starter` web services have ephemeral disk, which is fine here:
+  Convertly already deletes converted files ~15 minutes after completion,
+  well within a single container's lifetime.
+- To change rate limits, size/duration caps, etc., edit
+  `server/src/middleware/rateLimit.ts` and `server/src/lib/ytdlp.ts`, then
+  push — Render redeploys automatically on new commits by default.
+
 ## Pages
 
 - `/` — Converter
