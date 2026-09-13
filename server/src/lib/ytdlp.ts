@@ -18,6 +18,14 @@ const MAX_DURATION_SECONDS = 3 * 60 * 60; // reject anything over 3 hours
 // around it in most cases.
 const CLIENT_FALLBACK_ARGS = ["--extractor-args", "youtube:player_client=android,ios,web"];
 
+// Optional path to a Netscape-format cookies.txt exported from a real,
+// logged-in browser session. Cloud/datacenter IPs are increasingly required
+// to present an authenticated session to get real (non-metadata-only)
+// formats back from YouTube; without this, some videos will fetch info but
+// fail to actually convert. See server/.env.example for how to export one.
+const COOKIES_FILE = process.env.YTDLP_COOKIES_FILE;
+const COOKIES_ARGS = COOKIES_FILE ? ["--cookies", COOKIES_FILE] : [];
+
 export class YtDlpError extends Error {
   code: string;
   constructor(code: string, message: string) {
@@ -86,6 +94,7 @@ export async function fetchVideoInfo(videoId: string): Promise<VideoMeta> {
         "--skip-download",
         "--ignore-no-formats-error",
         ...CLIENT_FALLBACK_ARGS,
+        ...COOKIES_ARGS,
         url,
       ],
       { timeoutMs: INFO_TIMEOUT_MS },
@@ -160,6 +169,7 @@ export async function convertVideo(opts: ConvertOptions): Promise<ConvertResult>
     "--ffmpeg-location",
     FFMPEG_BIN,
     ...CLIENT_FALLBACK_ARGS,
+    ...COOKIES_ARGS,
   ];
 
   if (opts.format === "mp3") {

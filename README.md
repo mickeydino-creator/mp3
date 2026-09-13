@@ -138,6 +138,26 @@ Notes:
   `server/src/middleware/rateLimit.ts` and `server/src/lib/ytdlp.ts`, then
   push — Render redeploys automatically on new commits by default.
 
+### If conversions fail with "Video unavailable" / "Requested format is not available"
+
+YouTube increasingly requires an authenticated session for real (non-metadata)
+formats when requests come from cloud/datacenter IPs, Render included. If
+this happens:
+
+1. Log into YouTube in a normal browser with an account you have rights to
+   convert from, and export its cookies with an extension like
+   [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)
+   (Netscape format).
+2. On the `convertly-api` service in Render: **Environment** tab → **Secret
+   Files** → add a file (e.g. path `/etc/secrets/youtube-cookies.txt`) with
+   the cookies.txt contents.
+3. Set the env var `YTDLP_COOKIES_FILE` to that same path.
+4. Manual Deploy. `server/src/lib/ytdlp.ts` picks it up automatically and
+   passes `--cookies` to every `yt-dlp` call.
+
+Treat the cookies file like a credential — it's tied to that YouTube account.
+Re-export and replace it if conversions start failing again (cookies expire).
+
 ## Pages
 
 - `/` — Converter
