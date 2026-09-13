@@ -11,6 +11,13 @@ const INFO_TIMEOUT_MS = 20_000;
 const CONVERT_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes hard ceiling per job
 const MAX_DURATION_SECONDS = 3 * 60 * 60; // reject anything over 3 hours
 
+// YouTube's default "web" player client frequently returns a bare "Video
+// unavailable" for requests coming from cloud/datacenter IPs (Render, AWS,
+// etc.), even for perfectly public videos. Falling back through the
+// android/ios clients (which don't need this extra signature check) works
+// around it in most cases.
+const CLIENT_FALLBACK_ARGS = ["--extractor-args", "youtube:player_client=android,ios,web"];
+
 export class YtDlpError extends Error {
   code: string;
   constructor(code: string, message: string) {
@@ -72,7 +79,7 @@ export async function fetchVideoInfo(videoId: string): Promise<VideoMeta> {
   try {
     const result = await runProcess(
       YTDLP_BIN,
-      ["-J", "--no-playlist", "--no-warnings", "--skip-download", url],
+      ["-J", "--no-playlist", "--no-warnings", "--skip-download", ...CLIENT_FALLBACK_ARGS, url],
       { timeoutMs: INFO_TIMEOUT_MS },
     );
     stdout = result.stdout;
@@ -144,6 +151,7 @@ export async function convertVideo(opts: ConvertOptions): Promise<ConvertResult>
     "--newline",
     "--ffmpeg-location",
     FFMPEG_BIN,
+    ...CLIENT_FALLBACK_ARGS,
   ];
 
   if (opts.format === "mp3") {
