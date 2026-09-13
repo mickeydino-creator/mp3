@@ -7,7 +7,7 @@ import type { VideoMeta } from "./jobs.js";
 const YTDLP_BIN = process.env.YTDLP_PATH || "yt-dlp";
 const FFMPEG_BIN = process.env.FFMPEG_PATH || "ffmpeg";
 
-const INFO_TIMEOUT_MS = 20_000;
+const INFO_TIMEOUT_MS = 45_000;
 const CONVERT_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes hard ceiling per job
 const MAX_DURATION_SECONDS = 3 * 60 * 60; // reject anything over 3 hours
 
