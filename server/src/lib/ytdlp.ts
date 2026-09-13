@@ -79,7 +79,15 @@ export async function fetchVideoInfo(videoId: string): Promise<VideoMeta> {
   try {
     const result = await runProcess(
       YTDLP_BIN,
-      ["-J", "--no-playlist", "--no-warnings", "--skip-download", ...CLIENT_FALLBACK_ARGS, url],
+      [
+        "-J",
+        "--no-playlist",
+        "--no-warnings",
+        "--skip-download",
+        "--ignore-no-formats-error",
+        ...CLIENT_FALLBACK_ARGS,
+        url,
+      ],
       { timeoutMs: INFO_TIMEOUT_MS },
     );
     stdout = result.stdout;
@@ -166,7 +174,7 @@ export async function convertVideo(opts: ConvertOptions): Promise<ConvertResult>
     const height = opts.videoHeight ?? "720";
     args.push(
       "-f",
-      `bestvideo[height<=${height}][ext=mp4]+bestaudio[ext=m4a]/best[height<=${height}][ext=mp4]/best[height<=${height}]`,
+      `bestvideo[height<=${height}]+bestaudio/best[height<=${height}]`,
       "--merge-output-format",
       "mp4",
     );
