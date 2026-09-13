@@ -1,0 +1,15 @@
+{
+  "name": "convertly",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Convertly - convert YouTube videos you own or have permission to download into MP3/MP4",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=server & npm run dev --workspace=client",
+    "build": "npm run build --workspace=server && npm run build --workspace=client",
+    "start": "npm run start --workspace=server"
+  }
+}
