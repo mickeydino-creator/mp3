@@ -149,14 +149,16 @@ video's metadata fine but fail to get an actual downloadable format.
 isn't always enough. There are two ways to fix it beyond that — try them in
 this order:
 
-**1. Self-hosted PO token provider (recommended, no personal account needed)**
+**1. Self-hosted PO token provider (recommended, no personal account, no extra cost)**
 
 [`bgutil-ytdlp-pot-provider`](https://github.com/Brainicism/bgutil-ytdlp-pot-provider)
 runs YouTube's actual BotGuard JS to mint a real token — this is what's
-being checked, so it works without any login. `render.yaml` already deploys
-it as a private service (`convertly-potoken`) and wires `convertly-api` to
-it via `POT_PROVIDER_URL`; the plugin is preinstalled in `server/Dockerfile`.
-If you used the Blueprint flow, this is already active — nothing further to
+being checked, so it works without any login. `server/Dockerfile` builds
+its HTTP server straight into the API's own image and `start.sh` runs it as
+a second process inside the same container (bound to `127.0.0.1`, not
+exposed publicly), with `POT_PROVIDER_URL` defaulted to it — no second
+Render service, and no paid plan required beyond whatever `convertly-api`
+is already on. This is already active on every deploy; nothing further to
 do. Verified working end-to-end in development against a real public video.
 
 **2. YouTube cookies (fallback, ties conversions to one account)**
