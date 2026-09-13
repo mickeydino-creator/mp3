@@ -33,6 +33,19 @@ const CLIENT_FALLBACK_ARGS = [
 const COOKIES_FILE = process.env.YTDLP_COOKIES_FILE;
 const COOKIES_ARGS = COOKIES_FILE ? ["--cookies", COOKIES_FILE] : [];
 
+// Optional: base URL of a self-hosted bgutil-ytdlp-pot-provider instance
+// (https://github.com/Brainicism/bgutil-ytdlp-pot-provider). It mints a
+// legitimate Proof-of-Origin token by running YouTube's own BotGuard
+// JavaScript, which is what YouTube actually checks for on flagged IPs —
+// this works without any personal account/cookies. Requires the
+// `bgutil-ytdlp-pot-provider` pip package installed alongside yt-dlp (see
+// server/Dockerfile) plus the provider's HTTP server running somewhere
+// reachable (see render.yaml's convertly-potoken service).
+const POT_PROVIDER_URL = process.env.POT_PROVIDER_URL;
+const POT_PROVIDER_ARGS = POT_PROVIDER_URL
+  ? ["--extractor-args", `youtubepot-bgutilhttp:base_url=${POT_PROVIDER_URL}`]
+  : [];
+
 export class YtDlpError extends Error {
   code: string;
   constructor(code: string, message: string) {
@@ -101,6 +114,7 @@ export async function fetchVideoInfo(videoId: string): Promise<VideoMeta> {
         "--skip-download",
         "--ignore-no-formats-error",
         ...CLIENT_FALLBACK_ARGS,
+        ...POT_PROVIDER_ARGS,
         ...COOKIES_ARGS,
         url,
       ],
@@ -176,6 +190,7 @@ export async function convertVideo(opts: ConvertOptions): Promise<ConvertResult>
     "--ffmpeg-location",
     FFMPEG_BIN,
     ...CLIENT_FALLBACK_ARGS,
+    ...POT_PROVIDER_ARGS,
     ...COOKIES_ARGS,
   ];
 

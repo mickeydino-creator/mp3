@@ -140,14 +140,36 @@ Notes:
 
 ### If conversions fail with "Video unavailable" / "Requested format is not available"
 
-YouTube increasingly requires an authenticated session for real (non-metadata)
-formats when requests come from cloud/datacenter IPs, Render included. If
-this happens:
+YouTube scores requests by IP reputation and by whether the client presents a
+valid Proof-of-Origin (PO) token minted by its own BotGuard JavaScript.
+Datacenter IPs (Render included) are scored low, so `yt-dlp` may fetch a
+video's metadata fine but fail to get an actual downloadable format.
+`server/src/lib/ytdlp.ts` already tries several player clients
+(android/ios/tv_embedded/mweb/web) as a first line of defense, but that alone
+isn't always enough. There are two ways to fix it beyond that — try them in
+this order:
+
+**1. Self-hosted PO token provider (recommended, no personal account needed)**
+
+[`bgutil-ytdlp-pot-provider`](https://github.com/Brainicism/bgutil-ytdlp-pot-provider)
+runs YouTube's actual BotGuard JS to mint a real token — this is what's
+being checked, so it works without any login. `render.yaml` already deploys
+it as a private service (`convertly-potoken`) and wires `convertly-api` to
+it via `POT_PROVIDER_URL`; the plugin is preinstalled in `server/Dockerfile`.
+If you used the Blueprint flow, this is already active — nothing further to
+do. Verified working end-to-end in development against a real public video.
+
+**2. YouTube cookies (fallback, ties conversions to one account)**
+
+If the PO token provider ever stops working (this is an ongoing arms race
+with YouTube), an authenticated session is the other reliable option:
 
 1. Log into YouTube in a normal browser with an account you have rights to
    convert from, and export its cookies with an extension like
    [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)
-   (Netscape format).
+   (Netscape format). Use a dedicated account, not your primary one — it
+   ties every conversion to that account's session, and could in theory get
+   it flagged for automated activity.
 2. On the `convertly-api` service in Render: **Environment** tab → **Secret
    Files** → add a file (e.g. path `/etc/secrets/youtube-cookies.txt`) with
    the cookies.txt contents.
@@ -155,8 +177,8 @@ this happens:
 4. Manual Deploy. `server/src/lib/ytdlp.ts` picks it up automatically and
    passes `--cookies` to every `yt-dlp` call.
 
-Treat the cookies file like a credential — it's tied to that YouTube account.
-Re-export and replace it if conversions start failing again (cookies expire).
+Treat the cookies file like a credential. Re-export and replace it if
+conversions start failing again (cookies expire).
 
 ## Pages
 
